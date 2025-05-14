@@ -8,10 +8,10 @@
  */
 namespace OCA\DAV\CardDAV;
 
+use OCA\DAV\Service\ASyncService;
 use OCP\AppFramework\Db\TTransactional;
 use OCP\AppFramework\Http;
 use OCP\DB\Exception;
-use OCP\Http\Client\IClient;
 use OCP\Http\Client\IClientService;
 use OCP\IConfig;
 use OCP\IDBConnection;
@@ -19,27 +19,27 @@ use OCP\IUser;
 use OCP\IUserManager;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
-use Sabre\DAV\Xml\Response\MultiStatus;
-use Sabre\DAV\Xml\Service;
 use Sabre\VObject\Reader;
 use Sabre\Xml\ParseException;
 use function is_null;
 
-class SyncService {
+class SyncService extends ASyncService {
 
 	use TTransactional;
 	private ?array $localSystemAddressBook = null;
 	protected string $certPath;
 
 	public function __construct(
+		IClientService $clientService,
+		IConfig $config,
 		private CardDavBackend $backend,
 		private IUserManager $userManager,
 		private IDBConnection $dbConnection,
 		private LoggerInterface $logger,
 		private Converter $converter,
-		private IClientService $clientService,
-		private IConfig $config,
 	) {
+		parent::__construct($clientService, $config);
+
 		$this->certPath = '';
 	}
 
@@ -54,7 +54,8 @@ class SyncService {
 
 		// 2. query changes
 		try {
-			$response = $this->requestSyncReport($url, $userName, $addressBookUrl, $sharedSecret, $syncToken);
+			$absoluteUri = $this->prepareUri($url, $addressBookUrl);
+			$response = $this->requestSyncReport($absoluteUri, $userName, $sharedSecret, $syncToken);
 		} catch (ClientExceptionInterface $ex) {
 			if ($ex->getCode() === Http::STATUS_UNAUTHORIZED) {
 				// remote server revoked access to the address book, remove it
@@ -71,7 +72,8 @@ class SyncService {
 		foreach ($response['response'] as $resource => $status) {
 			$cardUri = basename($resource);
 			if (isset($status[200])) {
-				$vCard = $this->download($url, $userName, $sharedSecret, $resource);
+				$absoluteUrl = $this->prepareUri($url, $resource);
+				$vCard = $this->download($absoluteUrl, $userName, $sharedSecret);
 				$this->atomic(function () use ($addressBookId, $cardUri, $vCard): void {
 					$existingCard = $this->backend->getCard($addressBookId, $cardUri);
 					if ($existingCard === false) {
