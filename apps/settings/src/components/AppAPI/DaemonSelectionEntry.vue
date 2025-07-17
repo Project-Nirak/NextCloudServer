@@ -1,17 +1,19 @@
+<!--
+  - SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
-	<div class="daemon">
-		<NcListItem :name="itemTitle"
-			:details="isDefault ? t('settings', 'Default') : ''"
-			:force-display-actions="true"
-			:counter-number="daemon.exAppsCount"
-			:class="{'daemon-default': isDefault }"
-			counter-type="highlighted"
-			@click.stop="selectDaemonAndInstall">
-			<template #subname>
-				{{ daemon.accepts_deploy_id }}
-			</template>
-		</NcListItem>
-	</div>
+	<NcListItem :name="itemTitle"
+		:details="isDefault ? t('settings', 'Default') : ''"
+		:force-display-actions="true"
+		:counter-number="daemon.exAppsCount"
+		:active="isDefault"
+		counter-type="highlighted"
+		@click.stop="selectDaemonAndInstall">
+		<template #subname>
+			{{ daemon.accepts_deploy_id }}
+		</template>
+	</NcListItem>
 </template>
 
 <script>
@@ -21,7 +23,7 @@ import { useAppsStore } from '../../store/apps-store'
 import { useAppApiStore } from '../../store/app-api-store'
 
 export default {
-	name: 'DaemonEnableSelection',
+	name: 'DaemonSelectionEntry',
 	components: {
 		NcListItem,
 	},
@@ -30,22 +32,19 @@ export default {
 		daemon: {
 			type: Object,
 			required: true,
-			default: () => {},
 		},
 		isDefault: {
 			type: Boolean,
 			required: true,
-			default: () => false,
 		},
 		app: {
 			type: Object,
 			required: true,
-			default: () => {},
 		},
 		deployOptions: {
 			type: Object,
 			required: false,
-			default: () => null,
+			default: () => ({}),
 		},
 	},
 	setup() {
@@ -76,9 +75,3 @@ export default {
 	},
 }
 </script>
-
-<style lang="scss">
-.daemon-default > .list-item {
-	background-color: var(--color-background-dark);
-}
-</style>

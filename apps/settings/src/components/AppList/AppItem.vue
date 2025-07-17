@@ -112,7 +112,7 @@
 				{{ forceEnableButtonText }}
 			</NcButton>
 
-			<DaemonSelectionModal v-if="app?.app_api && showSelectDaemonModal"
+			<DaemonSelectionDialog v-if="app?.app_api && showSelectDaemonModal"
 				:show.sync="showSelectDaemonModal"
 				:app="app" />
 		</component>
@@ -130,7 +130,7 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import { mdiCogOutline } from '@mdi/js'
 import { useAppApiStore } from '../../store/app-api-store.ts'
-import DaemonSelectionModal from '../AppAPI/DaemonSelectionModal.vue'
+import DaemonSelectionDialog from '../AppAPI/DaemonSelectionDialog.vue'
 
 export default {
 	name: 'AppItem',
@@ -139,7 +139,7 @@ export default {
 		AppScore,
 		NcButton,
 		NcIconSvgWrapper,
-		DaemonSelectionModal,
+		DaemonSelectionDialog,
 	},
 	mixins: [AppManagement, SvgFilterMixin],
 	props: {

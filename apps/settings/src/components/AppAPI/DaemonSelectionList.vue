@@ -1,8 +1,12 @@
+<!--
+  - SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
 	<div class="daemon-selection-list">
 		<ul v-if="dockerDaemons.length > 0"
 			:aria-label="t('settings', 'Registered Deploy daemons list')">
-			<DaemonEnableSelection v-for="daemon in dockerDaemons"
+			<DaemonSelectionEntry v-for="daemon in dockerDaemons"
 				:key="daemon.id"
 				:daemon="daemon"
 				:is-default="defaultDaemon.name === daemon.name"
@@ -11,19 +15,28 @@
 				@close="closeModal" />
 		</ul>
 		<NcEmptyContent v-else
+			class="daemon-selection-list__empty-content"
 			:name="t('settings', 'No Deploy daemons configured')"
 			:description="t('settings', 'Register a custom one or setup from available templates')">
 			<template #icon>
 				<FormatListBullet :size="20" />
+			</template>
+			<template #action>
+				<NcButton :href="appApiAdminPage">
+					{{ t('settings', 'Manage Deploy daemons') }}
+				</NcButton>
 			</template>
 		</NcEmptyContent>
 	</div>
 </template>
 
 <script>
+import { generateUrl } from '@nextcloud/router'
+
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import FormatListBullet from 'vue-material-design-icons/FormatListBulleted.vue'
-import DaemonEnableSelection from './DaemonEnableSelection.vue'
+import DaemonSelectionEntry from './DaemonSelectionEntry.vue'
 import { useAppApiStore } from '../../store/app-api-store.ts'
 import { useAppsStore } from '../../store/apps-store.ts'
 
@@ -31,8 +44,9 @@ export default {
 	name: 'DaemonSelectionList',
 	components: {
 		FormatListBullet,
-		DaemonEnableSelection,
+		DaemonSelectionEntry,
 		NcEmptyContent,
+		NcButton,
 	},
 	props: {
 		app: {
@@ -61,6 +75,9 @@ export default {
 		defaultDaemon() {
 			return this.appApiStore.defaultDaemon
 		},
+		appApiAdminPage() {
+			return generateUrl('/settings/admin/app_api')
+		},
 	},
 	methods: {
 		closeModal() {
@@ -72,11 +89,11 @@ export default {
 
 <style scoped lang="scss">
 .daemon-selection-list {
-	max-height: 300px;
+	max-height: 350px;
 	overflow-y: scroll;
 	padding: 2rem;
 
-	.empty-content {
+	&__empty-content {
 		margin-top: 0;
 		text-align: center;
 	}

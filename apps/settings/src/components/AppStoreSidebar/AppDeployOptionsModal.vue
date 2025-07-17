@@ -152,6 +152,7 @@ import { computed, ref } from 'vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
+import { emit } from '@nextcloud/event-bus'
 
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
@@ -185,10 +186,6 @@ export default {
 		},
 		show: {
 			type: Boolean,
-			required: true,
-		},
-		showDaemonSelectionModal: {
-			type: Function,
 			required: true,
 		},
 	},
@@ -286,7 +283,7 @@ export default {
 			if (this.appApiStore.dockerDaemons.length === 1 && this.app.needsDownload) {
 				this.enable(this.app.id, this.appApiStore.dockerDaemons[0], this.deployOptions)
 			} else if (this.app.needsDownload) {
-				this.showDaemonSelectionModal(this.deployOptions)
+				emit('showDaemonSelectionModal', this.deployOptions)
 			} else {
 				this.enable(this.app.id, this.app.daemon, this.deployOptions)
 			}

@@ -78,7 +78,7 @@ export const useAppApiStore = defineStore('app-api-apps', {
 			})
 		},
 
-		enableApp(appId: string, daemon: IDeployDaemon, deployOptions: IDeployOptions[] = []) {
+		enableApp(appId: string, daemon: IDeployDaemon, deployOptions: IDeployOptions) {
 			this.setLoading(appId, true)
 			this.setLoading('install', true)
 			return confirmPassword().then(() => {
@@ -296,12 +296,15 @@ export const useAppApiStore = defineStore('app-api-apps', {
 		},
 
 		async fetchDockerDaemons() {
-			return axios.get(generateUrl('/apps/app_api/daemons'))
-				.then((res) => {
-					this.defaultDaemon = res.data.daemons.find((daemon: IDeployDaemon) => daemon.name === res.data.default_daemon_config)
-					this.dockerDaemons = res.data.daemons.filter((daemon: IDeployDaemon) => daemon.accepts_deploy_id === 'docker-install')
-					return res
-				})
+			try {
+				const { data } = await axios.get(generateUrl('/apps/app_api/daemons'))
+				this.defaultDaemon = data.daemons.find((daemon: IDeployDaemon) => daemon.name === data.default_daemon_config)
+				this.dockerDaemons = data.daemons.filter((daemon: IDeployDaemon) => daemon.accepts_deploy_id === 'docker-install')
+			} catch (error) {
+				logger.error('[app-api-store] Failed to fetch Docker daemons', { error })
+				return false
+			}
+			return true
 		},
 
 		updateAppsStatus() {

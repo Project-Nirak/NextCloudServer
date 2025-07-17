@@ -1,36 +1,34 @@
+<!--
+  - SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
 <template>
-	<div class="daemon-selection-modal">
-		<NcModal :show="show"
-			:name="t('settings', 'Daemon selection')"
-			size="normal"
-			@close="closeModal">
-			<div class="select-modal-body">
-				<h3>{{ t('settings', 'Choose Deploy Daemon for {appName}', {appName: app.name }) }}</h3>
-				<DaemonSelectionList :app="app"
-					:deploy-options="deployOptions"
-					@close="closeModal" />
-			</div>
-		</NcModal>
-	</div>
+	<NcDialog :open="show"
+		:name="t('settings', 'Choose Deploy Daemon for {appName}', {appName: app.name })"
+		size="normal"
+		@update:open="closeModal">
+		<DaemonSelectionList :app="app"
+			:deploy-options="deployOptions"
+			@close="closeModal" />
+	</NcDialog>
 </template>
 
 <script>
-import NcModal from '@nextcloud/vue/components/NcModal'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import DaemonSelectionList from './DaemonSelectionList.vue'
 import { useAppsStore } from '../../store/apps-store'
 import { useAppApiStore } from '../../store/app-api-store'
 
 export default {
-	name: 'DaemonSelectionModal',
+	name: 'DaemonSelectionDialog',
 	components: {
-		NcModal,
+		NcDialog,
 		DaemonSelectionList,
 	},
 	props: {
 		show: {
 			type: Boolean,
 			required: true,
-			default: false,
 		},
 		app: {
 			type: Object,
@@ -63,8 +61,3 @@ export default {
 	},
 }
 </script>
-<style scoped>
-.select-modal-body h3 {
-	text-align: center;
-}
-</style>

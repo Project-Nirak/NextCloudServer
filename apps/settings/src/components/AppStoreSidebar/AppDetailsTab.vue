@@ -194,9 +194,8 @@
 
 			<AppDeployOptionsModal v-if="app?.app_api"
 				:show.sync="showDeployOptionsModal"
-				:app="app"
-				:show-daemon-selection-modal="showSelectionModal" />
-			<DaemonSelectionModal v-if="app?.app_api && showSelectDaemonModal"
+				:app="app" />
+			<DaemonSelectionDialog v-if="app?.app_api"
 				:show.sync="showSelectDaemonModal"
 				:app="app"
 				:deploy-options="deployOptions" />
@@ -205,6 +204,7 @@
 </template>
 
 <script>
+import { subscribe, unsubscribe } from '@nextcloud/event-bus'
 import NcAppSidebarTab from '@nextcloud/vue/components/NcAppSidebarTab'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDateTime from '@nextcloud/vue/components/NcDateTime'
@@ -212,7 +212,7 @@ import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcCheckboxRadioSwitch from '@nextcloud/vue/components/NcCheckboxRadioSwitch'
 import AppDeployOptionsModal from './AppDeployOptionsModal.vue'
-import DaemonSelectionModal from '../AppAPI/DaemonSelectionModal.vue'
+import DaemonSelectionDialog from '../AppAPI/DaemonSelectionDialog.vue'
 
 import AppManagement from '../../mixins/AppManagement.js'
 import { mdiBug, mdiFeatureSearch, mdiStar, mdiTextBox, mdiTooltipQuestion, mdiToyBrickPlus } from '@mdi/js'
@@ -230,7 +230,7 @@ export default {
 		NcSelect,
 		NcCheckboxRadioSwitch,
 		AppDeployOptionsModal,
-		DaemonSelectionModal,
+		DaemonSelectionDialog,
 	},
 	mixins: [AppManagement],
 
@@ -376,11 +376,15 @@ export default {
 	},
 	beforeUnmount() {
 		this.deployOptions = null
+		unsubscribe('showDaemonSelectionModal')
 	},
 	mounted() {
 		if (this.app.groups.length > 0) {
 			this.groupCheckedAppsData = true
 		}
+		subscribe('showDaemonSelectionModal', (deployOptions) => {
+			this.showSelectionModal(deployOptions)
+		})
 	},
 	methods: {
 		toggleRemoveData() {
