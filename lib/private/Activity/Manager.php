@@ -142,7 +142,10 @@ class Manager implements IManager {
 			if ($c instanceof IBulkConsumer) {
 				$c->bulkReceive($event, $affectedUserIds, $setting);
 			}
-			$c->receive($event);
+			foreach ($affectedUserIds as $affectedUserId) {
+				$event->setAffectedUser($affectedUserId);
+				$c->receive($event);
+			}
 		}
 	}
 
