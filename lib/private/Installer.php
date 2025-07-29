@@ -20,6 +20,7 @@ use OC\DB\MigrationService;
 use OC\Files\FilenameValidator;
 use OC_App;
 use OCP\App\IAppManager;
+use OCP\BackgroundJob\IJobList;
 use OCP\Files;
 use OCP\HintException;
 use OCP\Http\Client\IClientService;
@@ -547,7 +548,11 @@ class Installer {
 			$output->debug('Registering tasks of ' . $info['id']);
 		}
 
-		\OC_App::setupBackgroundJobs($info['background-jobs']);
+		// Setup background jobs
+		$queue = Server::get(IJobList::class);
+		foreach ($info['background-jobs'] as $job) {
+			$queue->add($job);
+		}
 
 		// Run appinfo/install.php
 		self::includeAppScript($appPath . '/appinfo/install.php');

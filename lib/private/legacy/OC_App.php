@@ -574,6 +574,9 @@ class OC_App {
 		$r->run();
 	}
 
+	/**
+	 * @deprecated 32.0.0 Use the IJobList directly instead
+	 */
 	public static function setupBackgroundJobs(array $jobs) {
 		$queue = \OC::$server->getJobList();
 		foreach ($jobs as $job) {
