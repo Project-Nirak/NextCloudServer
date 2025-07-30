@@ -37,6 +37,9 @@ class PresetManager {
 		$this->configManager->clearConfigCaches();
 	}
 
+	/**
+	 * returns currently selected Preset
+	 */
 	public function getLexiconPreset(): Preset {
 		if ($this->configLexiconPreset === null) {
 			$this->configLexiconPreset = Preset::tryFrom($this->config->getSystemValueInt(self::PRESET_CONFIGKEY, 0)) ?? Preset::NONE;
