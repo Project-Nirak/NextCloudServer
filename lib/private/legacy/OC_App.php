@@ -6,6 +6,7 @@ declare(strict_types=1);
  * SPDX-FileCopyrightText: 2016 ownCloud, Inc.
  * SPDX-License-Identifier: AGPL-3.0-only
  */
+use OC\App\AppManager;
 use OC\App\DependencyAnalyzer;
 use OC\App\Platform;
 use OC\AppFramework\Bootstrap\Coordinator;
@@ -245,7 +246,7 @@ class OC_App {
 	 * @deprecated 32.0.0 internal, use getAppPath or getAppWebPath
 	 */
 	public static function findAppInDirectories(string $appId, bool $ignoreCache = false) {
-		return Server::get(IAppManager::class)->findAppInDirectories($appId, $ignoreCache);
+		return Server::get(AppManager::class)->findAppInDirectories($appId, $ignoreCache);
 	}
 
 	/**
