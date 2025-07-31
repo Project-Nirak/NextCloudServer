@@ -136,6 +136,7 @@ class AppManagerTest extends TestCase {
 			$this->logger,
 			$this->serverVersion,
 			$this->configManager,
+			$this->dependencyAnalyzer,
 		);
 	}
 
@@ -885,5 +886,4 @@ class AppManagerTest extends TestCase {
 			$manager->getAppVersion('unknown'),
 		);
 	}
-
 }
