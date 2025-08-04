@@ -101,13 +101,15 @@ class Server extends \Sabre\DAV\Server {
 		) {
 			$connection = \OCP\Server::get(Connection::class);
 			$queriesBefore = $connection->getStats()['executed'];
-			$callBack($propFind, $node);
+			$result = $callBack($propFind, $node);
 			$queriesAfter = $connection->getStats()['executed'];
 			$this->trackPluginQueries(
 				$pluginName,
 				$queriesAfter - $queriesBefore,
 				$propFind->getDepth()
 			);
+
+			return $result;
 		};
 	}
 
