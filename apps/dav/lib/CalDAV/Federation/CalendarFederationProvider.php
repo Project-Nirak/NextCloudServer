@@ -9,10 +9,12 @@ declare(strict_types=1);
 
 namespace OCA\DAV\CalDAV\Federation;
 
+use OCA\DAV\BackgroundJob\FederatedCalendarInitialSyncJob;
 use OCA\DAV\CalDAV\Federation\Protocol\CalendarFederationProtocolV1;
 use OCA\DAV\CalDAV\Federation\Protocol\ICalendarFederationProtocol;
 use OCA\DAV\DAV\Sharing\Backend as DavSharingBackend;
 use OCP\AppFramework\Http;
+use OCP\BackgroundJob\IJobList;
 use OCP\Federation\Exceptions\ProviderCouldNotAddShareException;
 use OCP\Federation\ICloudFederationProvider;
 use OCP\Federation\ICloudFederationShare;
@@ -27,6 +29,7 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		private readonly LoggerInterface $logger,
 		private readonly FederatedCalendarMapper $federatedCalendarMapper,
 		private readonly CalendarFederationConfig $calendarFederationConfig,
+		private readonly IJobList $jobList,
 	) {
 	}
 
@@ -119,11 +122,17 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		$calendar->setPermissions($access);
 		$calendar->setComponents($components);
 		$calendar = $this->federatedCalendarMapper->insert($calendar);
+
+		$this->jobList->add(FederatedCalendarInitialSyncJob::class, [
+			FederatedCalendarInitialSyncJob::ARGUMENT_ID => $calendar->getId(),
+		]);
+
 		return (string)$calendar->getId();
 	}
 
 	public function notificationReceived($notificationType, $providerId, array $notification) {
 		// TODO: implement a notification to queue a sync job immediately if a calendar is changed
+		return [];
 	}
 
 	/**

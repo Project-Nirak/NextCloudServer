@@ -40,7 +40,6 @@ class SyncService extends ASyncService {
 	 * @param string $sharedSecret
 	 * @param string|null $syncToken
 	 * @param FederatedCalendarEntity $calendar
-	 * @return string New sync token
 	 */
 	public function syncRemoteCalendar(
 		string $url,
@@ -48,7 +47,7 @@ class SyncService extends ASyncService {
 		string $sharedSecret,
 		?string $syncToken,
 		FederatedCalendarEntity $calendar,
-	): string {
+	): SyncServiceResult {
 		try {
 			$response = $this->requestSyncReport($url, $username, $sharedSecret, $syncToken);
 		} catch (ClientExceptionInterface $ex) {
@@ -65,6 +64,7 @@ class SyncService extends ASyncService {
 		}
 
 		// TODO: use multi-get for download
+		$downloadedEvents = 0;
 		foreach ($response['response'] as $resource => $status) {
 			$objectUri = basename($resource);
 			if (isset($status[200])) {
@@ -78,11 +78,15 @@ class SyncService extends ASyncService {
 						$this->backend->updateCalendarObject($calendar->getId(), $objectUri, $vCard, CalDavBackend::CALENDAR_TYPE_FEDERATED);
 					}
 				}, $this->dbConnection);
+				$downloadedEvents++;
 			} else {
 				$this->backend->deleteCalendarObject($calendar->getId(), $objectUri, CalDavBackend::CALENDAR_TYPE_FEDERATED, true);
 			}
 		}
 
-		return $response['token'];
+		return new SyncServiceResult(
+			$response['token'],
+			$downloadedEvents,
+		);
 	}
 }

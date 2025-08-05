@@ -24,9 +24,11 @@ class FederatedCalendarSyncService {
 	}
 
 	/**
+	 * @return int Downloaded event count (created or updated).
+	 *
 	 * @throws ClientExceptionInterface If syncing the calendar fails.
 	 */
-	public function syncOne(FederatedCalendarEntity $calendar): void {
+	public function syncOne(FederatedCalendarEntity $calendar): int {
 		[,, $sharedWith] = explode('/', $calendar->getPrincipaluri());
 		$calDavUser = $this->cloudIdManager->getCloudId($sharedWith, null)->getId();
 		$remoteUrl = $calendar->getRemoteUrl();
@@ -36,7 +38,7 @@ class FederatedCalendarSyncService {
 		// auth according to RFC 7617
 		$calDavUser = base64_encode($calDavUser);
 
-		$newSyncToken = $this->syncService->syncRemoteCalendar(
+		$syncResponse = $this->syncService->syncRemoteCalendar(
 			$remoteUrl,
 			$calDavUser,
 			$calendar->getToken(),
@@ -44,6 +46,7 @@ class FederatedCalendarSyncService {
 			$calendar,
 		);
 
+		$newSyncToken = $syncResponse->getSyncToken();
 		$newSyncToken = (int)substr($newSyncToken, strlen('http://sabre.io/ns/sync/'));
 		if ($newSyncToken !== $calendar->getSyncToken()) {
 			$this->federatedCalendarMapper->updateSyncTokenAndTime(
@@ -54,5 +57,7 @@ class FederatedCalendarSyncService {
 			$this->logger->debug("Sync Token for $remoteUrl unchanged from previous sync");
 			$this->federatedCalendarMapper->updateSyncTime($calendar->getId());
 		}
+
+		return $syncResponse->getDownloadedEvents();
 	}
 }

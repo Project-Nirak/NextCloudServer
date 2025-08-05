@@ -13,6 +13,7 @@ use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Db\MultipleObjectsReturnedException;
 use OCP\AppFramework\Db\QBMapper;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
@@ -25,6 +26,21 @@ class FederatedCalendarMapper extends QBMapper {
 		private readonly ITimeFactory $time,
 	) {
 		parent::__construct($db, self::TABLE_NAME, FederatedCalendarEntity::class);
+	}
+
+	/**
+	 * @throws DoesNotExistException If there is no federated calendar with the given id.
+	 */
+	public function find(int $id): FederatedCalendarEntity {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from(self::TABLE_NAME)
+			->where($qb->expr()->eq(
+				'id',
+				$qb->createNamedParameter($id, IQueryBuilder::PARAM_INT),
+				IQueryBuilder::PARAM_INT,
+			));
+		return $this->findEntity($qb);
 	}
 
 	/**
@@ -91,7 +107,8 @@ class FederatedCalendarMapper extends QBMapper {
 				$qb->createNamedParameter($beforeTimestamp, IQueryBuilder::PARAM_INT),
 				IQueryBuilder::PARAM_INT,
 			))
-			->orWhere($qb->expr()->isNull('last_sync'));
+			// Omit unsynced calendars for now as they are synced by a separate job
+			->andWhere($qb->expr()->isNotNull('last_sync'));
 		return $this->findEntities($qb);
 	}
 
