@@ -18,6 +18,7 @@ use OCP\Activity\IFilter;
 use OCP\Activity\IManager;
 use OCP\Activity\IProvider;
 use OCP\Activity\ISetting;
+use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IConfig;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -47,6 +48,7 @@ class Manager implements IManager {
 		protected IValidator $validator,
 		protected IRichTextFormatter $richTextFormatter,
 		protected IL10N $l10n,
+		protected ITimeFactory $timeFactory,
 	) {
 	}
 
@@ -104,7 +106,7 @@ class Manager implements IManager {
 		}
 
 		if (!$event->getTimestamp()) {
-			$event->setTimestamp(time());
+			$event->setTimestamp($this->timeFactory->getTime());
 		}
 
 		if ($event->getAffectedUser() === '' || !$event->isValid()) {
@@ -131,7 +133,7 @@ class Manager implements IManager {
 		}
 
 		if (!$event->getTimestamp()) {
-			$event->setTimestamp(time());
+			$event->setTimestamp($this->timeFactory->getTime());
 		}
 
 		if (!$event->isValid()) {

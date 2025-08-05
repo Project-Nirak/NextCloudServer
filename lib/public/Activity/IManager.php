@@ -52,9 +52,8 @@ interface IManager {
 	public function publish(IEvent $event): void;
 
 	/**
-	 * Publish a bulk event to the activity consumers
+	 * Bulk publish an event for multiple users
 	 * taking into account the app specific activity settings
-	 * Allows publishing of the same event for a bulk of users
 	 *
 	 * Make sure to call at least the following methods before sending an Event:
 	 *  - setApp()
