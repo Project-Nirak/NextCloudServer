@@ -129,7 +129,7 @@ class Calendar extends \Sabre\CalDAV\Calendar implements IRestorable, IShareable
 			],
 		];
 
-		if ($this->canWrite()) {
+		if ($this->getName() !== BirthdayService::BIRTHDAY_CALENDAR_URI) {
 			$acl[] = [
 				'privilege' => '{DAV:}write',
 				'principal' => $this->getOwner(),

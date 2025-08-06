@@ -7,6 +7,7 @@
  */
 namespace OCA\DAV\CalDAV;
 
+use OCA\DAV\CalDAV\Federation\FederatedCalendarMapper;
 use OCA\DAV\CalDAV\Federation\RemoteUserCalendarHome;
 use OCA\DAV\DAV\RemoteUserPrincipalBackend;
 use OCP\IConfig;
@@ -25,6 +26,7 @@ class CalendarRoot extends \Sabre\CalDAV\CalendarRoot {
 		private LoggerInterface $logger,
 		private IL10N $l10n,
 		private IConfig $config,
+		private FederatedCalendarMapper $federatedCalendarMapper,
 	) {
 		parent::__construct($principalBackend, $caldavBackend, $principalPrefix);
 	}
@@ -45,6 +47,7 @@ class CalendarRoot extends \Sabre\CalDAV\CalendarRoot {
 			$this->caldavBackend,
 			$principal,
 			$this->logger,
+			$this->federatedCalendarMapper,
 			array_key_exists($principal['uri'], $this->returnCachedSubscriptions)
 		);
 	}

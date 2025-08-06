@@ -40,19 +40,18 @@ class CalendarHome extends \Sabre\CalDAV\CalendarHome {
 	/** @var PluginManager */
 	private $pluginManager;
 
-	private readonly FederatedCalendarMapper $federatedCalendarMapper;
 	private ?array $cachedChildren = null;
 
 	public function __construct(
 		BackendInterface $caldavBackend,
 		array $principalInfo,
 		private LoggerInterface $logger,
+		private FederatedCalendarMapper $federatedCalendarMapper,
 		private bool $returnCachedSubscriptions,
 	) {
 		parent::__construct($caldavBackend, $principalInfo);
 		$this->l10n = \OC::$server->getL10N('dav');
 		$this->config = Server::get(IConfig::class);
-		$this->federatedCalendarMapper = Server::get(FederatedCalendarMapper::class);
 		$this->pluginManager = new PluginManager(
 			\OC::$server,
 			Server::get(IAppManager::class)

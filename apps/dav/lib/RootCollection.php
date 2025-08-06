@@ -61,6 +61,7 @@ class RootCollection extends SimpleCollection {
 		$config = Server::get(IConfig::class);
 		$proxyMapper = Server::get(ProxyMapper::class);
 		$rootFolder = Server::get(IRootFolder::class);
+		$federatedCalendarMapper = Server::get(FederatedCalendarMapper::class);
 
 		$userPrincipalBackend = new Principal(
 			$userManager,
@@ -108,15 +109,15 @@ class RootCollection extends SimpleCollection {
 			Server::get(FederatedCalendarMapper::class),
 			false,
 		);
-		$userCalendarRoot = new CalendarRoot($userPrincipalBackend, $caldavBackend, 'principals/users', $logger, $l10n, $config);
+		$userCalendarRoot = new CalendarRoot($userPrincipalBackend, $caldavBackend, 'principals/users', $logger, $l10n, $config, $federatedCalendarMapper);
 		$userCalendarRoot->disableListing = $disableListing;
 
-		$remoteUserCalendarRoot = new CalendarRoot($remoteUserPrincipalBackend, $caldavBackend, RemoteUserPrincipalBackend::PRINCIPAL_PREFIX, $logger, $l10n, $config);
+		$remoteUserCalendarRoot = new CalendarRoot($remoteUserPrincipalBackend, $caldavBackend, RemoteUserPrincipalBackend::PRINCIPAL_PREFIX, $logger, $l10n, $config, $federatedCalendarMapper);
 		$remoteUserCalendarRoot->disableListing = $disableListing;
 
-		$resourceCalendarRoot = new CalendarRoot($calendarResourcePrincipalBackend, $caldavBackend, 'principals/calendar-resources', $logger, $l10n, $config);
+		$resourceCalendarRoot = new CalendarRoot($calendarResourcePrincipalBackend, $caldavBackend, 'principals/calendar-resources', $logger, $l10n, $config, $federatedCalendarMapper);
 		$resourceCalendarRoot->disableListing = $disableListing;
-		$roomCalendarRoot = new CalendarRoot($calendarRoomPrincipalBackend, $caldavBackend, 'principals/calendar-rooms', $logger, $l10n, $config);
+		$roomCalendarRoot = new CalendarRoot($calendarRoomPrincipalBackend, $caldavBackend, 'principals/calendar-rooms', $logger, $l10n, $config, $federatedCalendarMapper);
 		$roomCalendarRoot->disableListing = $disableListing;
 
 		$publicCalendarRoot = new PublicCalendarRoot($caldavBackend, $l10n, $config, $logger);
