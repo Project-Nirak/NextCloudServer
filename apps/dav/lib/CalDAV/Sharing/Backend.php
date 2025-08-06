@@ -31,8 +31,4 @@ class Backend extends SharingBackend {
 	) {
 		parent::__construct($this->userManager, $this->groupManager, $this->principalBackend, $this->remoteUserPrincipalBackend, $this->cacheFactory, $this->service, $this->federationSharingService, $this->logger);
 	}
-
-	public function getShareByCalendarName(string $principal, string $calendarName): array {
-		return $this->service->getShareByCalendarName($principal, $calendarName);
-	}
 }

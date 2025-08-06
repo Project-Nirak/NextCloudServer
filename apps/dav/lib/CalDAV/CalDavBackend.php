@@ -3291,21 +3291,6 @@ class CalDavBackend extends AbstractBackend implements SyncSupport, Subscription
 	}
 
 	/**
-	 * @return string[]
-	 */
-	public function getRemoteUserPrincipalsWithAccess(int $resourceId): array {
-		/*
-		$shares = $this->calendarSharingBackend->getShares($resourceId);
-		return array_map(static function (array $share): string {
-			$token = $share['{http://nextcloud.com/ns}token'];
-			if ($token)
-		}, $shares);
-		*/
-
-		return [];
-	}
-
-	/**
 	 * update properties table
 	 *
 	 * @param int $calendarId

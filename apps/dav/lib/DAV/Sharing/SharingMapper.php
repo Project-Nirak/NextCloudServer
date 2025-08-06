@@ -7,7 +7,6 @@ declare(strict_types=1);
  */
 namespace OCA\DAV\DAV\Sharing;
 
-use OCP\DB\Exception;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\IDBConnection;
 
@@ -147,31 +146,6 @@ class SharingMapper {
 			->andWhere($query->expr()->eq('type', $query->createNamedParameter($resourceType)))
 			->andWhere($query->expr()->eq('access', $query->createNamedParameter(Backend::ACCESS_UNSHARED, IQueryBuilder::PARAM_INT)))
 			->executeStatement();
-	}
-
-	/**
-	 * @throws \OCP\DB\Exception
-	 */
-	public function hasShareWithPrincipalUri(string $resourceType, string $principalUri): bool {
-		$query = $this->db->getQueryBuilder();
-		$result = $query->selectDistinct($query->func()->count('*'))
-			->from('dav_shares')
-			->where($query->expr()->eq(
-				'principaluri',
-				$query->createNamedParameter($principalUri, IQueryBuilder::PARAM_STR),
-				IQueryBuilder::PARAM_STR,
-			))
-			->andWhere($query->expr()->eq(
-				'type',
-				$query->createNamedParameter($resourceType, IQueryBuilder::PARAM_STR),
-				IQueryBuilder::PARAM_STR,
-			))
-			->executeQuery();
-
-		$count = (int)$result->fetchOne();
-		$result->closeCursor();
-
-		return $count > 0;
 	}
 
 	/**

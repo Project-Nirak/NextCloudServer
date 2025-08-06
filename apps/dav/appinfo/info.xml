@@ -30,7 +30,7 @@
 		<job>OCA\DAV\BackgroundJob\EventReminderJob</job>
 		<job>OCA\DAV\BackgroundJob\CalendarRetentionJob</job>
 		<job>OCA\DAV\BackgroundJob\PruneOutdatedSyncTokensJob</job>
-		<job>OCA\DAV\BackgroundJob\FederatedCalendarSyncJob</job>
+		<job>OCA\DAV\BackgroundJob\FederatedCalendarsSyncJob</job>
 	</background-jobs>
 
 	<repair-steps>

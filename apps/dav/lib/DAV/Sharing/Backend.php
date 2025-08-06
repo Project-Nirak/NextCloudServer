@@ -36,6 +36,9 @@ abstract class Backend {
 		private RemoteUserPrincipalBackend $remoteUserPrincipalBackend,
 		private ICacheFactory $cacheFactory,
 		private SharingService $service,
+		// TODO: Make `FederationSharingService` abstract once we support federated address book
+		//       sharing. The abstract sharing backend should not take a service scoped to calendars
+		//       by default.
 		private FederationSharingService $federationSharingService,
 		private LoggerInterface $logger,
 	) {
@@ -49,6 +52,7 @@ abstract class Backend {
 	public function updateShares(IShareable $shareable, array $add, array $remove, array $oldShares = []): void {
 		$this->shareCache->clear();
 		foreach ($add as $element) {
+			// Hacky code below ... shouldn't we check the whole (principal) root collection instead?
 			$principal = $this->principalBackend->findByUri($element['href'], '')
 				?? $this->remoteUserPrincipalBackend->findByUri($element['href'], '');
 			if (empty($principal)) {
@@ -143,7 +147,6 @@ abstract class Backend {
 				'readOnly' => (int)$row['access'] === Backend::ACCESS_READ,
 				'{http://owncloud.org/ns}principal' => (string)$row['principaluri'],
 				'{http://owncloud.org/ns}group-share' => isset($p['uri']) && (str_starts_with($p['uri'], 'principals/groups') || str_starts_with($p['uri'], 'principals/circles')),
-				'{http://nextcloud.com/ns}token' => $row['token'] ?? '',
 			];
 		}
 		$this->shareCache->set((string)$resourceId, $shares);
