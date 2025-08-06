@@ -70,7 +70,7 @@ final class FederatedCalendarAuth implements BackendInterface {
 		foreach ($rows as $row) {
 			$ownerPrincipalUri = $row['principaluri'];
 			[, $ownerUserId] = \Sabre\Uri\split($ownerPrincipalUri);
-			$shareUri = $row['uri'] . "_shared_by_" . $ownerUserId;
+			$shareUri = $row['uri'] . '_shared_by_' . $ownerUserId;
 			if (str_starts_with($requestPath, "remote-calendars/$remoteUserPrincipalId/$shareUri")) {
 				// Yes? -> return early
 				return $remoteUserPrincipalUri;
@@ -81,7 +81,7 @@ final class FederatedCalendarAuth implements BackendInterface {
 	}
 
 	public function check(RequestInterface $request, ResponseInterface $response): array {
-		if (!str_starts_with($request->getPath(), "remote-calendars/")) {
+		if (!str_starts_with($request->getPath(), 'remote-calendars/')) {
 			return [false, 'This request is not for a federated calendar'];
 		}
 

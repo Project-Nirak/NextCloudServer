@@ -85,7 +85,6 @@ use OCP\Config\BeforePreferenceSetEvent;
 use OCP\Contacts\IManager as IContactsManager;
 use OCP\DB\Events\AddMissingIndicesEvent;
 use OCP\Federation\Events\TrustedServerRemovedEvent;
-use OCP\Federation\ICloudFederationProvider;
 use OCP\Federation\ICloudFederationProviderManager;
 use OCP\IUserSession;
 use OCP\Server;
@@ -293,7 +292,7 @@ class Application extends App implements IBootstrap {
 		$manager->addCloudFederationProvider(
 			CalendarFederationProvider::PROVIDER_ID,
 			'Calendar Federation',
-			static fn() => Server::get(CalendarFederationProvider::class),
+			static fn () => Server::get(CalendarFederationProvider::class),
 		);
 	}
 }

@@ -9,8 +9,6 @@ declare(strict_types=1);
 
 namespace OCA\DAV\CalDAV\Federation\Protocol;
 
-use Sabre\CalDAV\Xml\Property\SupportedCalendarComponentSet;
-
 class CalendarFederationProtocolV1 implements ICalendarFederationProtocol {
 	public const VERSION = 'v1';
 
@@ -125,4 +123,3 @@ class CalendarFederationProtocolV1 implements ICalendarFederationProtocol {
 		$this->components = $components;
 	}
 }
-
