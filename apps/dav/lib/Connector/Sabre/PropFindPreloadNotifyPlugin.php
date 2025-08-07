@@ -37,7 +37,7 @@ class PropFindPreloadNotifyPlugin extends ServerPlugin {
 	 * re-fetching.
 	 */
 	public function collectionPreloadNotifier(PropFind $propFind, INode $node): bool {
-		$arguments = func_get_args();
+		$arguments = \func_get_args();
 		if (!$this->shouldPreload(...$arguments)) {
 			return true;
 		}
