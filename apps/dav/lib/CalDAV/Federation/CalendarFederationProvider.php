@@ -15,6 +15,7 @@ use OCA\DAV\CalDAV\Federation\Protocol\ICalendarFederationProtocol;
 use OCA\DAV\DAV\Sharing\Backend as DavSharingBackend;
 use OCP\AppFramework\Http;
 use OCP\BackgroundJob\IJobList;
+use OCP\Constants;
 use OCP\Federation\Exceptions\ProviderCouldNotAddShareException;
 use OCP\Federation\ICloudFederationProvider;
 use OCP\Federation\ICloudFederationShare;
@@ -41,7 +42,7 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		if (!$this->calendarFederationConfig->isFederationEnabled()) {
 			$this->logger->debug('Received a federation invite but federation is disabled');
 			throw new ProviderCouldNotAddShareException(
-				'Server does not support talk federation',
+				'Server does not support calendar federation',
 				'',
 				Http::STATUS_SERVICE_UNAVAILABLE,
 			);
@@ -58,7 +59,6 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		}
 
 		$rawProtocol = $share->getProtocol();
-		// TODO: test what happens if no version in protocol
 		switch ($rawProtocol[ICalendarFederationProtocol::PROP_VERSION]) {
 			case CalendarFederationProtocolV1::VERSION:
 				try {
@@ -92,13 +92,15 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 			);
 		}
 
-		if ($access !== DavSharingBackend::ACCESS_READ) {
-			throw new ProviderCouldNotAddShareException(
+		// TODO: implement read-write sharing
+		$permissions = match ($access) {
+			DavSharingBackend::ACCESS_READ => Constants::PERMISSION_READ,
+			default => throw new ProviderCouldNotAddShareException(
 				"Unsupported access value: $access",
 				'',
 				Http::STATUS_BAD_REQUEST,
-			);
-		}
+			),
+		};
 
 		// The calendar uri is the local name of the calendar. As such it must not contain slashes.
 		// Just use the hashed url for simplicity here.
@@ -119,7 +121,7 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		$calendar->setToken($share->getShareSecret());
 		$calendar->setSharedBy($share->getSharedBy());
 		$calendar->setSharedByDisplayName($share->getSharedByDisplayName());
-		$calendar->setPermissions($access);
+		$calendar->setPermissions($permissions);
 		$calendar->setComponents($components);
 		$calendar = $this->federatedCalendarMapper->insert($calendar);
 

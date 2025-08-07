@@ -10,9 +10,8 @@ declare(strict_types=1);
 namespace OCA\DAV\CalDAV\Federation;
 
 use OCA\DAV\DAV\RemoteUserPrincipalBackend;
-use OCP\DB\QueryBuilder\IQueryBuilder;
+use OCA\DAV\DAV\Sharing\SharingMapper;
 use OCP\Defaults;
-use OCP\IDBConnection;
 use Sabre\DAV\Auth\Backend\BackendInterface;
 use Sabre\HTTP\Auth\Basic as BasicAuth;
 use Sabre\HTTP\RequestInterface;
@@ -22,7 +21,7 @@ final class FederatedCalendarAuth implements BackendInterface {
 	private readonly string $realm;
 
 	public function __construct(
-		private readonly IDBConnection $db,
+		private readonly SharingMapper $sharingMapper,
 	) {
 		$defaults = new Defaults();
 		$this->realm = $defaults->getName();
@@ -39,32 +38,10 @@ final class FederatedCalendarAuth implements BackendInterface {
 		$remoteUserPrincipalUri = RemoteUserPrincipalBackend::PRINCIPAL_PREFIX . "/$username";
 		[, $remoteUserPrincipalId] = \Sabre\Uri\split($remoteUserPrincipalUri);
 
-		$qb = $this->db->getQueryBuilder();
-		$qb->select('c.uri', 'c.principaluri')
-			->from('dav_shares', 'ds')
-			->join('ds', 'calendars', 'c', $qb->expr()->eq(
-				'ds.resourceid',
-				'c.id',
-				IQueryBuilder::PARAM_INT,
-			))
-			->where($qb->expr()->eq(
-				'ds.type',
-				$qb->createNamedParameter('calendar', IQueryBuilder::PARAM_STR),
-				IQueryBuilder::PARAM_STR,
-			))
-			->andWhere($qb->expr()->eq(
-				'ds.principaluri',
-				$qb->createNamedParameter($remoteUserPrincipalUri, IQueryBuilder::PARAM_STR),
-				IQueryBuilder::PARAM_STR,
-			))
-			->andWhere($qb->expr()->eq(
-				'ds.token',
-				$qb->createNamedParameter($password, IQueryBuilder::PARAM_STR),
-				IQueryBuilder::PARAM_STR,
-			));
-		$result = $qb->executeQuery();
-		$rows = $result->fetchAll();
-		$result->closeCursor();
+		$rows = $this->sharingMapper->getSharedCalendarsForRemoteUser(
+			$remoteUserPrincipalUri,
+			$password,
+		);
 
 		// Is the requested calendar actually shared with the remote user?
 		foreach ($rows as $row) {
@@ -87,7 +64,7 @@ final class FederatedCalendarAuth implements BackendInterface {
 
 		$auth = new BasicAuth($this->realm, $request, $response);
 		$userpass = $auth->getCredentials();
-		if (!$userpass) {
+		if ($userpass === null || count($userpass) !== 2) {
 			return [false, "No 'Authorization: Basic' header found. Either the client didn't send one, or the server is misconfigured"];
 		}
 		$principal = $this->validateUserPass($request->getPath(), $userpass[0], $userpass[1]);

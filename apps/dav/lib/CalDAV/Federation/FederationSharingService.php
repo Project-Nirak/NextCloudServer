@@ -47,11 +47,16 @@ class FederationSharingService {
 	private function decodeRemoteUserPrincipal(string $principal): ?string {
 		// Expected format: principals/remote-users/abcdef123
 		[$prefix, $collection, $encodedId] = explode('/', $principal);
-		if ($prefix !== 'principals' && $collection !== 'remote-users') {
+		if ($prefix !== 'principals' || $collection !== 'remote-users') {
 			return null;
 		}
 
-		return base64_decode($encodedId);
+		$decodedId = base64_decode($encodedId);
+		if (!is_string($decodedId)) {
+			return null;
+		}
+
+		return $decodedId;
 	}
 
 	/**
@@ -67,7 +72,7 @@ class FederationSharingService {
 
 		// 1. Validate share data
 		$shareWith = $this->decodeRemoteUserPrincipal($principal);
-		if (!$shareWith) {
+		if ($shareWith === null) {
 			$this->logger->error($baseError . 'Principal of sharee is not belonging to a remote user', [
 				'shareable' => $shareable->getName(),
 				'encodedShareWith' => $principal,
@@ -77,7 +82,7 @@ class FederationSharingService {
 
 		[,, $ownerUid] = explode('/', $shareable->getOwner());
 		$owner = $this->userManager->get($ownerUid);
-		if (!$owner) {
+		if ($owner === null) {
 			$this->logger->error($baseError . 'Shareable is not owned by a user on this server', [
 				'shareable' => $shareable->getName(),
 				'shareWith' => $shareWith,

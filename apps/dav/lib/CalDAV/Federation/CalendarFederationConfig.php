@@ -11,7 +11,7 @@ namespace OCA\DAV\CalDAV\Federation;
 
 use OCP\AppFramework\Services\IAppConfig;
 
-final class CalendarFederationConfig {
+class CalendarFederationConfig {
 	public function __construct(
 		private readonly IAppConfig $appConfig,
 	) {

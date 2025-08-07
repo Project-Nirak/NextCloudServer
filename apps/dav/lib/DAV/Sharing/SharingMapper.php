@@ -173,4 +173,43 @@ class SharingMapper {
 
 		return $rows;
 	}
+
+	/**
+	 * @psalm-return array{uri: string, principaluri: string}[]
+	 * @throws \OCP\DB\Exception
+	 */
+	public function getSharedCalendarsForRemoteUser(
+		string $remoteUserPrincipalUri,
+		string $token,
+	): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('c.uri', 'c.principaluri')
+			->from('dav_shares', 'ds')
+			->join('ds', 'calendars', 'c', $qb->expr()->eq(
+				'ds.resourceid',
+				'c.id',
+				IQueryBuilder::PARAM_INT,
+			))
+			->where($qb->expr()->eq(
+				'ds.type',
+				$qb->createNamedParameter('calendar', IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			))
+			->andWhere($qb->expr()->eq(
+				'ds.principaluri',
+				$qb->createNamedParameter($remoteUserPrincipalUri, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			))
+			->andWhere($qb->expr()->eq(
+				'ds.token',
+				$qb->createNamedParameter($token, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			));
+		$result = $qb->executeQuery();
+		$rows = $result->fetchAll();
+		$result->closeCursor();
+
+		return $rows;
+	}
+
 }
