@@ -51,8 +51,8 @@ class Server extends \Sabre\DAV\Server {
 	): void {
 		$this->debugEnabled ? $this->monitorPropfindQueries(
 			parent::once(...),
-			...func_get_args(),
-		) : parent::once(...func_get_args());
+			...\func_get_args(),
+		) : parent::once(...\func_get_args());
 	}
 
 	#[Override]
@@ -63,8 +63,8 @@ class Server extends \Sabre\DAV\Server {
 	): void {
 		$this->debugEnabled ? $this->monitorPropfindQueries(
 			parent::on(...),
-			...func_get_args(),
-		) : parent::on(...func_get_args());
+			...\func_get_args(),
+		) : parent::on(...\func_get_args());
 	}
 
 	/**
