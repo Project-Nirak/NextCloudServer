@@ -80,6 +80,7 @@ class Server extends \Sabre\DAV\Server {
 		$pluginName = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 3)[2]['class'] ?? 'unknown';
 		// The NotifyPlugin needs to be excluded as it emits the
 		// `preloadCollection` event, which causes many plugins run queries.
+		/** @psalm-suppress TypeDoesNotContainType */
 		if ($pluginName === PropFindPreloadNotifyPlugin::class || ($eventName !== 'propFind'
 				&& $eventName !== 'preloadCollection')) {
 			$parentFn($eventName, $callBack, $priority);
