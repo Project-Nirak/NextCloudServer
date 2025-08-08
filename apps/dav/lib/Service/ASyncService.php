@@ -14,6 +14,7 @@ use OCP\Http\Client\IClientService;
 use OCP\IConfig;
 use Sabre\DAV\Xml\Response\MultiStatus;
 use Sabre\DAV\Xml\Service as SabreXmlService;
+use Sabre\Xml\ParseException;
 
 /**
  * Abstract sync service to sync CalDAV and CardDAV data from federated instances.
@@ -91,7 +92,7 @@ abstract class ASyncService {
 		$body = $response->getBody();
 		assert(is_string($body));
 
-		return $this->parseMultiStatus($body);
+		return $this->parseMultiStatus($body, $absoluteUrl);
 	}
 
 	protected function download(
@@ -135,19 +136,49 @@ abstract class ASyncService {
 	}
 
 	/**
-	 * @psalm-return array{response: array<string, array>, token: ?string}
+	 * @return array{response: array<string, array<array-key, mixed>>, token: ?string, truncated: bool}
+	 * @throws ParseException
 	 */
-	private function parseMultiStatus($body): array {
-		$xml = new SabreXmlService();
-
+	private function parseMultiStatus(string $body, string $resourceUrl): array {
 		/** @var MultiStatus $multiStatus */
-		$multiStatus = $xml->expect('{DAV:}multistatus', $body);
+		$multiStatus = (new SabreXmlService())->expect('{DAV:}multistatus', $body);
 
 		$result = [];
+		$truncated = false;
+
 		foreach ($multiStatus->getResponses() as $response) {
-			$result[$response->getHref()] = $response->getResponseProperties();
+			$href = $response->getHref();
+			if ($response->getHttpStatus() === '507' && $this->isResponseForRequestUri($href, $resourceUrl)) {
+				$truncated = true;
+			} else {
+				$result[$response->getHref()] = $response->getResponseProperties();
+			}
 		}
 
-		return ['response' => $result, 'token' => $multiStatus->getSyncToken()];
+		return ['response' => $result, 'token' => $multiStatus->getSyncToken(), 'truncated' => $truncated];
+	}
+
+	/**
+	 * Determines whether the provided response URI corresponds to the given request URI.
+	 */
+	private function isResponseForRequestUri(string $responseUri, string $requestUri): bool {
+		/*
+		 * Example response uri:
+		 *
+		 * /remote.php/dav/addressbooks/system/system/system/
+		 * /cloud/remote.php/dav/addressbooks/system/system/system/ (when installed in a subdirectory)
+		 *
+		 * Example request uri:
+		 *
+		 * https://foo.bar/remote.php/dav/addressbooks/system/system/system
+		 *
+		 * References:
+		 * https://github.com/nextcloud/3rdparty/blob/e0a509739b13820f0a62ff9cad5d0fede00e76ee/sabre/dav/lib/DAV/Sync/Plugin.php#L172-L174
+		 * https://github.com/nextcloud/server/blob/b40acb34a39592070d8455eb91c5364c07928c50/apps/federation/lib/SyncFederationAddressBooks.php#L41
+		 */
+		return str_ends_with(
+			rtrim($requestUri, '/'),
+			rtrim($responseUri, '/'),
+		);
 	}
 }
