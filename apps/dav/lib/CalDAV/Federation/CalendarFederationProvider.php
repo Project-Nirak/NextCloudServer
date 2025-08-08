@@ -144,7 +144,7 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		switch ($notificationType) {
 			case CalendarFederationNotifier::NOTIFICATION_SYNC_CALENDAR:
 				return $this->handleSyncCalendarNotification($notification);
-			default;
+			default:
 				return [];
 		}
 	}
