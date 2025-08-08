@@ -54,11 +54,11 @@ class CalendarFederationProviderTest extends TestCase {
 		);
 	}
 
-	public function testGetShareType(): void  {
+	public function testGetShareType(): void {
 		$this->assertEquals('calendar', $this->calendarFederationProvider->getShareType());
 	}
 
-	public function testGetSupportedShareTypes(): void  {
+	public function testGetSupportedShareTypes(): void {
 		$this->assertEqualsCanonicalizing(
 			['user'],
 			$this->calendarFederationProvider->getSupportedShareTypes(),
