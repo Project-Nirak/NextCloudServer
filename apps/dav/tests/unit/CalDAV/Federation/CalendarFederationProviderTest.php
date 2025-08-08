@@ -16,8 +16,12 @@ use OCA\DAV\CalDAV\Federation\CalendarFederationProvider;
 use OCA\DAV\CalDAV\Federation\FederatedCalendarEntity;
 use OCA\DAV\CalDAV\Federation\FederatedCalendarMapper;
 use OCP\BackgroundJob\IJobList;
+use OCP\Federation\Exceptions\BadRequestException;
 use OCP\Federation\Exceptions\ProviderCouldNotAddShareException;
 use OCP\Federation\ICloudFederationShare;
+use OCP\Federation\ICloudId;
+use OCP\Federation\ICloudIdManager;
+use OCP\Share\Exceptions\ShareNotFound;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use Psr\Log\LoggerInterface;
@@ -30,6 +34,7 @@ class CalendarFederationProviderTest extends TestCase {
 	private FederatedCalendarMapper&MockObject $federatedCalendarMapper;
 	private CalendarFederationConfig&MockObject $calendarFederationConfig;
 	private IJobList&MockObject $jobList;
+	private ICloudIdManager&MockObject $cloudIdManager;
 
 	protected function setUp(): void {
 		parent::setUp();
@@ -38,12 +43,14 @@ class CalendarFederationProviderTest extends TestCase {
 		$this->federatedCalendarMapper = $this->createMock(FederatedCalendarMapper::class);
 		$this->calendarFederationConfig = $this->createMock(CalendarFederationConfig::class);
 		$this->jobList = $this->createMock(JobList::class);
+		$this->cloudIdManager = $this->createMock(ICloudIdManager::class);
 
 		$this->calendarFederationProvider = new CalendarFederationProvider(
 			$this->logger,
 			$this->federatedCalendarMapper,
 			$this->calendarFederationConfig,
 			$this->jobList,
+			$this->cloudIdManager,
 		);
 	}
 
@@ -298,5 +305,180 @@ class CalendarFederationProviderTest extends TestCase {
 		$this->expectExceptionMessageMatches('/Unsupported access value: [0-9]+/');
 		$this->expectExceptionCode(400);
 		$this->calendarFederationProvider->shareReceived($share);
+	}
+
+	public function testNotificationReceivedWithUnknownNotification(): void {
+		$actual = $this->calendarFederationProvider->notificationReceived('UNKNOWN', 'calendar', [
+			'sharedSecret' => 'token',
+			'foobar' => 'baz',
+		]);
+		$this->assertEquals([], $actual);
+	}
+
+	public function testNotificationReceivedWithInvalidProviderId(): void {
+		$this->expectException(BadRequestException::class);
+		$this->calendarFederationProvider->notificationReceived('SYNC_CALENDAR', 'foobar', [
+			'sharedSecret' => 'token',
+			'shareWith' => 'remote1@nextcloud.remote',
+			'calendarUrl' => 'https://nextcloud.host/remote.php/dav/remote-calendars/cmVtb3RlMUBuZXh0Y2xvdWQucmVtb3Rl/cal1_shared_by_host1',
+		]);
+	}
+
+	public function testNotificationReceivedWithSyncCalendarNotification(): void {
+		$cloudId = $this->createMock(ICloudId::class);
+		$cloudId->method('getId')
+			->willReturn('remote1@nextcloud.remote');
+		$cloudId->method('getUser')
+			->willReturn('remote1');
+		$cloudId->method('getRemote')
+			->willReturn('nextcloud.remote');
+
+		$this->cloudIdManager->expects(self::once())
+			->method('resolveCloudId')
+			->with('remote1@nextcloud.remote')
+			->willReturn($cloudId);
+
+		$calendar1 = new FederatedCalendarEntity();
+		$calendar1->setId(10);
+		$calendar2 = new FederatedCalendarEntity();
+		$calendar2->setId(11);
+		$calendars = [
+			$calendar1,
+			$calendar2,
+		];
+		$this->federatedCalendarMapper->expects(self::once())
+			->method('findByRemoteUrl')
+			->with(
+				'https://nextcloud.host/remote.php/dav/remote-calendars/cmVtb3RlMUBuZXh0Y2xvdWQucmVtb3Rl/cal1_shared_by_host1',
+				'principals/users/remote1',
+				'token',
+			)
+			->willReturn($calendars);
+
+		$this->jobList->expects(self::exactly(2))
+			->method('add')
+			->willReturnMap([
+				[FederatedCalendarSyncJob::class, ['id' => 10]],
+				[FederatedCalendarSyncJob::class, ['id' => 11]],
+			]);
+
+		$actual = $this->calendarFederationProvider->notificationReceived(
+			'SYNC_CALENDAR',
+			'calendar',
+			[
+				'sharedSecret' => 'token',
+				'shareWith' => 'remote1@nextcloud.remote',
+				'calendarUrl' => 'https://nextcloud.host/remote.php/dav/remote-calendars/cmVtb3RlMUBuZXh0Y2xvdWQucmVtb3Rl/cal1_shared_by_host1',
+			],
+		);
+		$this->assertEquals([], $actual);
+	}
+
+	public static function provideIncompleteSyncCalendarNotificationData(): array {
+		return [
+			// Missing shareWith
+			[[
+				'sharedSecret' => 'token',
+				'shareWith' => '',
+				'calendarUrl' => 'https://nextcloud.host/remote.php/dav/remote-calendars/cmVtb3RlMUBuZXh0Y2xvdWQucmVtb3Rl/cal1_shared_by_host1',
+			]],
+			[[
+				'sharedSecret' => 'token',
+				'calendarUrl' => 'https://nextcloud.host/remote.php/dav/remote-calendars/cmVtb3RlMUBuZXh0Y2xvdWQucmVtb3Rl/cal1_shared_by_host1',
+			]],
+
+			// Missing calendarUrl
+			[[
+				'sharedSecret' => 'token',
+				'shareWith' => 'remote1@nextcloud.remote',
+				'calendarUrl' => '',
+			]],
+			[[
+				'sharedSecret' => 'token',
+				'shareWith' => 'remote1@nextcloud.remote',
+			]],
+		];
+	}
+
+	#[DataProvider('provideIncompleteSyncCalendarNotificationData')]
+	public function testNotificationReceivedWithSyncCalendarNotificationAndIncompleteData(
+		array $notification,
+	): void {
+		$this->cloudIdManager->expects(self::never())
+			->method('resolveCloudId');
+		$this->federatedCalendarMapper->expects(self::never())
+			->method('findByRemoteUrl');
+		$this->jobList->expects(self::never())
+			->method('add');
+
+		$this->expectException(BadRequestException::class);
+		$this->calendarFederationProvider->notificationReceived(
+			'SYNC_CALENDAR',
+			'calendar',
+			$notification,
+		);
+	}
+
+	public function testNotificationReceivedWithSyncCalendarNotificationAndInvalidCloudId(): void {
+		$this->cloudIdManager->expects(self::once())
+			->method('resolveCloudId')
+			->with('invalid-cloud-id')
+			->willThrowException(new \InvalidArgumentException());
+
+		$this->federatedCalendarMapper->expects(self::never())
+			->method('findByRemoteUrl');
+		$this->jobList->expects(self::never())
+			->method('add');
+
+		$this->expectException(ShareNotFound::class);
+		$this->expectExceptionMessage('Invalid sharee cloud id');
+		$this->calendarFederationProvider->notificationReceived(
+			'SYNC_CALENDAR',
+			'calendar',
+			[
+				'sharedSecret' => 'token',
+				'shareWith' => 'invalid-cloud-id',
+				'calendarUrl' => 'https://nextcloud.host/remote.php/dav/remote-calendars/cmVtb3RlMUBuZXh0Y2xvdWQucmVtb3Rl/cal1_shared_by_host1',
+			],
+		);
+	}
+
+	public function testNotificationReceivedWithSyncCalendarNotificationAndNoCalendars(): void {
+		$cloudId = $this->createMock(ICloudId::class);
+		$cloudId->method('getId')
+			->willReturn('remote1@nextcloud.remote');
+		$cloudId->method('getUser')
+			->willReturn('remote1');
+		$cloudId->method('getRemote')
+			->willReturn('nextcloud.remote');
+
+		$this->cloudIdManager->expects(self::once())
+			->method('resolveCloudId')
+			->with('remote1@nextcloud.remote')
+			->willReturn($cloudId);
+
+		$this->federatedCalendarMapper->expects(self::once())
+			->method('findByRemoteUrl')
+			->with(
+				'https://nextcloud.host/remote.php/dav/remote-calendars/cmVtb3RlMUBuZXh0Y2xvdWQucmVtb3Rl/cal1_shared_by_host1',
+				'principals/users/remote1',
+				'token',
+			)
+			->willReturn([]);
+
+		$this->jobList->expects(self::never())
+			->method('add');
+
+		$this->expectException(ShareNotFound::class);
+		$this->expectExceptionMessage('Calendar is not shared with the sharee');
+		$this->calendarFederationProvider->notificationReceived(
+			'SYNC_CALENDAR',
+			'calendar',
+			[
+				'sharedSecret' => 'token',
+				'shareWith' => 'remote1@nextcloud.remote',
+				'calendarUrl' => 'https://nextcloud.host/remote.php/dav/remote-calendars/cmVtb3RlMUBuZXh0Y2xvdWQucmVtb3Rl/cal1_shared_by_host1',
+			],
+		);
 	}
 }

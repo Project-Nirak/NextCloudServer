@@ -141,6 +141,10 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		$providerId,
 		array $notification,
 	): array {
+		if ($providerId !== self::PROVIDER_ID) {
+			throw new BadRequestException(['providerId']);
+		}
+
 		switch ($notificationType) {
 			case CalendarFederationNotifier::NOTIFICATION_SYNC_CALENDAR:
 				return $this->handleSyncCalendarNotification($notification);
