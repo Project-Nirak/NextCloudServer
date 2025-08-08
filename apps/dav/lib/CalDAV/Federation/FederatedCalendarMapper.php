@@ -192,4 +192,30 @@ class FederatedCalendarMapper extends QBMapper {
 
 		$qb->executeStatement();
 	}
+
+	/**
+	 * @return FederatedCalendarEntity[]
+	 */
+	public function findByRemoteUrl(string $remoteUrl, string $principalUri, string $token): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from(self::TABLE_NAME)
+			->where($qb->expr()->eq(
+				'remote_url',
+				$qb->createNamedParameter($remoteUrl, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			))
+			->andWhere($qb->expr()->eq(
+				'principaluri',
+				$qb->createNamedParameter($principalUri, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			))
+			->andWhere($qb->expr()->eq(
+				'token',
+				$qb->createNamedParameter($token, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			));
+
+		return $this->findEntities($qb);
+	}
 }

@@ -9,16 +9,19 @@ declare(strict_types=1);
 
 namespace OCA\DAV\CalDAV\Federation;
 
-use OCA\DAV\BackgroundJob\FederatedCalendarInitialSyncJob;
+use OCA\DAV\BackgroundJob\FederatedCalendarSyncJob;
 use OCA\DAV\CalDAV\Federation\Protocol\CalendarFederationProtocolV1;
 use OCA\DAV\CalDAV\Federation\Protocol\ICalendarFederationProtocol;
 use OCA\DAV\DAV\Sharing\Backend as DavSharingBackend;
 use OCP\AppFramework\Http;
 use OCP\BackgroundJob\IJobList;
 use OCP\Constants;
+use OCP\Federation\Exceptions\BadRequestException;
 use OCP\Federation\Exceptions\ProviderCouldNotAddShareException;
 use OCP\Federation\ICloudFederationProvider;
 use OCP\Federation\ICloudFederationShare;
+use OCP\Federation\ICloudIdManager;
+use OCP\Share\Exceptions\ShareNotFound;
 use Psr\Log\LoggerInterface;
 
 class CalendarFederationProvider implements ICloudFederationProvider {
@@ -31,6 +34,7 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		private readonly FederatedCalendarMapper $federatedCalendarMapper,
 		private readonly CalendarFederationConfig $calendarFederationConfig,
 		private readonly IJobList $jobList,
+		private readonly ICloudIdManager $cloudIdManager,
 	) {
 	}
 
@@ -125,16 +129,24 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 		$calendar->setComponents($components);
 		$calendar = $this->federatedCalendarMapper->insert($calendar);
 
-		$this->jobList->add(FederatedCalendarInitialSyncJob::class, [
-			FederatedCalendarInitialSyncJob::ARGUMENT_ID => $calendar->getId(),
+		$this->jobList->add(FederatedCalendarSyncJob::class, [
+			FederatedCalendarSyncJob::ARGUMENT_ID => $calendar->getId(),
 		]);
 
 		return (string)$calendar->getId();
 	}
 
-	public function notificationReceived($notificationType, $providerId, array $notification) {
-		// TODO: implement a notification to queue a sync job immediately if a calendar is changed
-		return [];
+	public function notificationReceived(
+		$notificationType,
+		$providerId,
+		array $notification,
+	): array {
+		switch ($notificationType) {
+			case CalendarFederationNotifier::NOTIFICATION_SYNC_CALENDAR:
+				return $this->handleSyncCalendarNotification($notification);
+			default;
+				return [];
+		}
 	}
 
 	/**
@@ -142,5 +154,46 @@ class CalendarFederationProvider implements ICloudFederationProvider {
 	 */
 	public function getSupportedShareTypes(): array {
 		return [self::USER_SHARE_TYPE];
+	}
+
+	/**
+	 * @throws BadRequestException If notification props are missing.
+	 * @throws ShareNotFound If the notification is not related to a known share.
+	 */
+	private function handleSyncCalendarNotification(array $notification): array {
+		$sharedSecret = $notification['sharedSecret'];
+		$shareWithRaw = $notification[CalendarFederationNotifier::PROP_SYNC_CALENDAR_SHARE_WITH] ?? null;
+		$calendarUrl = $notification[CalendarFederationNotifier::PROP_SYNC_CALENDAR_CALENDAR_URL] ?? null;
+
+		if ($shareWithRaw === null || $shareWithRaw === '') {
+			throw new BadRequestException([CalendarFederationNotifier::PROP_SYNC_CALENDAR_SHARE_WITH]);
+		}
+
+		if ($calendarUrl === null || $calendarUrl === '') {
+			throw new BadRequestException([CalendarFederationNotifier::PROP_SYNC_CALENDAR_CALENDAR_URL]);
+		}
+
+		try {
+			$shareWith = $this->cloudIdManager->resolveCloudId($shareWithRaw);
+		} catch (\InvalidArgumentException $e) {
+			throw new ShareNotFound('Invalid sharee cloud id');
+		}
+
+		$calendars = $this->federatedCalendarMapper->findByRemoteUrl(
+			$calendarUrl,
+			'principals/users/' . $shareWith->getUser(),
+			$sharedSecret,
+		);
+		if (empty($calendars)) {
+			throw new ShareNotFound('Calendar is not shared with the sharee');
+		}
+
+		foreach ($calendars as $calendar) {
+			$this->jobList->add(FederatedCalendarSyncJob::class, [
+				FederatedCalendarSyncJob::ARGUMENT_ID => $calendar->getId(),
+			]);
+		}
+
+		return [];
 	}
 }

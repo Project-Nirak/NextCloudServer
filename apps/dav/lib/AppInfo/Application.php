@@ -46,6 +46,7 @@ use OCA\DAV\Listener\AddressbookListener;
 use OCA\DAV\Listener\BirthdayListener;
 use OCA\DAV\Listener\CalendarContactInteractionListener;
 use OCA\DAV\Listener\CalendarDeletionDefaultUpdaterListener;
+use OCA\DAV\Listener\CalendarFederationNotificationListener;
 use OCA\DAV\Listener\CalendarObjectReminderUpdaterListener;
 use OCA\DAV\Listener\CalendarPublicationListener;
 use OCA\DAV\Listener\CalendarShareUpdateListener;
@@ -203,6 +204,10 @@ class Application extends App implements IBootstrap {
 		$context->registerEventListener(UserUpdatedEvent::class, UserEventsListener::class);
 
 		$context->registerEventListener(SabrePluginAuthInitEvent::class, SabrePluginAuthInitListener::class);
+
+		$context->registerEventListener(CalendarObjectCreatedEvent::class, CalendarFederationNotificationListener::class);
+		$context->registerEventListener(CalendarObjectUpdatedEvent::class, CalendarFederationNotificationListener::class);
+		$context->registerEventListener(CalendarObjectDeletedEvent::class, CalendarFederationNotificationListener::class);
 
 		$context->registerNotifierService(Notifier::class);
 

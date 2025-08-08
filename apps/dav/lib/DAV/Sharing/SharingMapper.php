@@ -212,4 +212,38 @@ class SharingMapper {
 		return $rows;
 	}
 
+	/**
+	 * @param string[] $principalUris
+	 *
+	 * @throws \OCP\DB\Exception
+	 */
+	public function getSharesByPrincipalsAndResource(
+		array $principalUris,
+		int $resourceId,
+		string $resourceType,
+	): array {
+		$qb = $this->db->getQueryBuilder();
+		$qb->select('*')
+			->from('dav_shares')
+			->where($qb->expr()->in(
+				'principaluri',
+				$qb->createNamedParameter($principalUris, IQueryBuilder::PARAM_STR_ARRAY),
+				IQueryBuilder::PARAM_STR_ARRAY,
+			))
+			->andWhere($qb->expr()->eq(
+				'resourceid',
+				$qb->createNamedParameter($resourceId, IQueryBuilder::PARAM_INT),
+				IQueryBuilder::PARAM_INT,
+			))
+			->andWhere($qb->expr()->eq(
+				'type',
+				$qb->createNamedParameter($resourceType, IQueryBuilder::PARAM_STR),
+				IQueryBuilder::PARAM_STR,
+			));
+		$result = $qb->executeQuery();
+		$rows = $result->fetchAll();
+		$result->closeCursor();
+
+		return $rows;
+	}
 }

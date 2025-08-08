@@ -12,14 +12,13 @@ namespace OCA\DAV\BackgroundJob;
 use OCA\DAV\CalDAV\Federation\CalendarFederationConfig;
 use OCA\DAV\CalDAV\Federation\FederatedCalendarMapper;
 use OCA\DAV\CalDAV\Federation\FederatedCalendarSyncService;
-use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\AppFramework\Utility\ITimeFactory;
-use OCP\BackgroundJob\QueuedJob;
+use OCP\BackgroundJob\TimedJob;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Log\LoggerInterface;
 
-class FederatedCalendarInitialSyncJob extends QueuedJob {
-	public const ARGUMENT_ID = 'id';
+class FederatedCalendarPeriodicSyncJob extends TimedJob {
+	private const DOWNLOAD_LIMIT = 500;
 
 	public function __construct(
 		ITimeFactory $time,
@@ -29,6 +28,10 @@ class FederatedCalendarInitialSyncJob extends QueuedJob {
 		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct($time);
+
+		$this->setTimeSensitivity(self::TIME_SENSITIVE);
+		$this->setAllowParallelRuns(false);
+		$this->setInterval(3600);
 	}
 
 	protected function run($argument): void {
@@ -36,30 +39,24 @@ class FederatedCalendarInitialSyncJob extends QueuedJob {
 			return;
 		}
 
-		$id = $argument[self::ARGUMENT_ID] ?? null;
-		if (!is_numeric($id)) {
-			return;
-		}
+		$downloadedEvents = 0;
+		$oneHourAgo = $this->time->getTime() - 3600;
+		$calendars = $this->federatedCalendarMapper->findUnsyncedSinceBefore($oneHourAgo);
+		foreach ($calendars as $calendar) {
+			try {
+				$downloadedEvents += $this->syncService->syncOne($calendar);
+			} catch (ClientExceptionInterface $e) {
+				$name = $calendar->getUri();
+				$this->logger->error("Failed to sync federated calendar $name: " . $e->getMessage(), [
+					'exception' => $e,
+					'calendar' => $calendar->toCalendarInfo(),
+				]);
+			}
 
-		$id = (int)$id;
-		try {
-			$calendar = $this->federatedCalendarMapper->find($id);
-		} catch (DoesNotExistException $e) {
-			return;
-		}
-
-		try {
-			$this->syncService->syncOne($calendar);
-		} catch (ClientExceptionInterface $e) {
-			$name = $calendar->getUri();
-			$this->logger->error("Failed to perform initial sync for federated calendar $name: " . $e->getMessage(), [
-				'exception' => $e,
-				'calendar' => $calendar->toCalendarInfo(),
-			]);
-
-			// Let the periodic background job pick up the calendar at a later point
-			$calendar->setLastSync(1);
-			$this->federatedCalendarMapper->update($calendar);
+			// Prevent stalling the background job queue for too long
+			if ($downloadedEvents >= self::DOWNLOAD_LIMIT) {
+				break;
+			}
 		}
 	}
 }

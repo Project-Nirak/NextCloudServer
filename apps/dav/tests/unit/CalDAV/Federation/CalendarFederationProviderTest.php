@@ -10,7 +10,7 @@ declare(strict_types=1);
 namespace OCA\DAV\Tests\unit\CalDAV\Federation;
 
 use OC\BackgroundJob\JobList;
-use OCA\DAV\BackgroundJob\FederatedCalendarInitialSyncJob;
+use OCA\DAV\BackgroundJob\FederatedCalendarSyncJob;
 use OCA\DAV\CalDAV\Federation\CalendarFederationConfig;
 use OCA\DAV\CalDAV\Federation\CalendarFederationProvider;
 use OCA\DAV\CalDAV\Federation\FederatedCalendarEntity;
@@ -111,7 +111,7 @@ class CalendarFederationProviderTest extends TestCase {
 
 		$this->jobList->expects(self::once())
 			->method('add')
-			->with(FederatedCalendarInitialSyncJob::class, ['id' => 10]);
+			->with(FederatedCalendarSyncJob::class, ['id' => 10]);
 
 		$this->assertEquals(10, $this->calendarFederationProvider->shareReceived($share));
 	}
