@@ -86,6 +86,7 @@ class CalendarFederationNotificationListener implements IEventListener {
 					'calendarName' => $calendarInfo['uri'],
 					'calendarOwner' => $sharedByUid,
 				]);
+				continue;
 			}
 
 			if ($response->getStatusCode() < 200 || $response->getStatusCode() >= 300) {
