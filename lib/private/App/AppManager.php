@@ -705,6 +705,9 @@ class AppManager implements IAppManager {
 	 */
 	public function clearAppsCache(): void {
 		$this->appInfos = [];
+		/** @var \OC\Memcache\Factory */
+		$factory = $this->memCacheFactory;
+		$factory->clearAll();
 	}
 
 	/**

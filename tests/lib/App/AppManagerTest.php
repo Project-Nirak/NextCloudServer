@@ -13,13 +13,13 @@ namespace Test\App;
 use OC\App\AppManager;
 use OC\AppConfig;
 use OC\Config\ConfigManager;
+use OC\Memcache\Factory;
 use OCP\App\AppPathNotFoundException;
 use OCP\App\Events\AppDisableEvent;
 use OCP\App\Events\AppEnableEvent;
 use OCP\App\IAppManager;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\ICache;
-use OCP\ICacheFactory;
 use OCP\IConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -89,7 +89,7 @@ class AppManagerTest extends TestCase {
 	protected IGroupManager&MockObject $groupManager;
 	protected AppConfig&MockObject $appConfig;
 	protected ICache&MockObject $cache;
-	protected ICacheFactory&MockObject $cacheFactory;
+	protected Factory&MockObject $cacheFactory;
 	protected IEventDispatcher&MockObject $eventDispatcher;
 	protected LoggerInterface&MockObject $logger;
 	protected IURLGenerator&MockObject $urlGenerator;
@@ -106,7 +106,7 @@ class AppManagerTest extends TestCase {
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->config = $this->createMock(IConfig::class);
 		$this->appConfig = $this->getAppConfig();
-		$this->cacheFactory = $this->createMock(ICacheFactory::class);
+		$this->cacheFactory = $this->createMock(Factory::class);
 		$this->cache = $this->createMock(ICache::class);
 		$this->eventDispatcher = $this->createMock(IEventDispatcher::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
@@ -233,28 +233,31 @@ class AppManagerTest extends TestCase {
 			$this->manager->disableApp('files_trashbin');
 		}
 		$this->eventDispatcher->expects($this->once())->method('dispatchTyped')->with(new AppEnableEvent('files_trashbin'));
+		$this->cacheFactory->expects(self::once())
+			->method('clearAll');
+
 		$this->manager->enableApp('files_trashbin');
 		$this->assertEquals('yes', $this->appConfig->getValue('files_trashbin', 'enabled', 'no'));
 	}
 
 	public function testDisableApp(): void {
 		$this->eventDispatcher->expects($this->once())->method('dispatchTyped')->with(new AppDisableEvent('files_trashbin'));
+		$this->cacheFactory->expects(self::once())
+			->method('clearAll');
+
 		$this->manager->disableApp('files_trashbin');
 		$this->assertEquals('no', $this->appConfig->getValue('files_trashbin', 'enabled', 'no'));
 	}
 
 	public function testNotEnableIfNotInstalled(): void {
-		try {
-			$this->manager->enableApp('some_random_name_which_i_hope_is_not_an_app');
-			$this->assertFalse(true, 'If this line is reached the expected exception is not thrown.');
-		} catch (AppPathNotFoundException $e) {
-			// Exception is expected
-			$this->assertEquals('Could not find path for some_random_name_which_i_hope_is_not_an_app', $e->getMessage());
-		}
+		$this->expectException(AppPathNotFoundException::class);
+		$this->expectExceptionMessage('Could not find path for some_random_name_which_i_hope_is_not_an_app');
+		$this->appConfig->expects(self::never())
+			->method('setValue');
+		$this->cacheFactory->expects(self::never())
+			->method('clearAll');
 
-		$this->assertEquals('no', $this->appConfig->getValue(
-			'some_random_name_which_i_hope_is_not_an_app', 'enabled', 'no'
-		));
+		$this->manager->enableApp('some_random_name_which_i_hope_is_not_an_app');
 	}
 
 	public function testEnableAppForGroups(): void {
@@ -289,7 +292,11 @@ class AppManagerTest extends TestCase {
 			->with('test')
 			->willReturn('apps/test');
 
-		$this->eventDispatcher->expects($this->once())->method('dispatchTyped')->with(new AppEnableEvent('test', ['group1', 'group2']));
+		$this->eventDispatcher->expects($this->once())
+			->method('dispatchTyped')
+			->with(new AppEnableEvent('test', ['group1', 'group2']));
+		$this->cacheFactory->expects(self::once())
+			->method('clearAll');
 
 		$manager->enableAppForGroups('test', $groups);
 		$this->assertEquals('["group1","group2"]', $this->appConfig->getValue('test', 'enabled', 'no'));
