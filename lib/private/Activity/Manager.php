@@ -99,10 +99,8 @@ class Manager implements IManager {
 	 * {@inheritDoc}
 	 */
 	public function publish(IEvent $event): void {
-		if ($event->getAuthor() === '') {
-			if ($this->session->getUser() instanceof IUser) {
-				$event->setAuthor($this->session->getUser()->getUID());
-			}
+		if ($event->getAuthor() === '' && $this->session->getUser() instanceof IUser) {
+			$event->setAuthor($this->session->getUser()->getUID());
 		}
 
 		if (!$event->getTimestamp()) {
