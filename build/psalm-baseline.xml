@@ -810,6 +810,15 @@
       <code><![CDATA[null]]></code>
     </NullableReturnStatement>
   </file>
+  <file src="apps/dav/lib/DAV/RemoteUserPrincipalBackend.php">
+    <InvalidNullableReturnType>
+      <code><![CDATA[getPrincipalByPath]]></code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement>
+      <code><![CDATA[null]]></code>
+      <code><![CDATA[$principal]]></code>
+    </NullableReturnStatement>
+  </file>
   <file src="apps/dav/lib/DAV/Sharing/Plugin.php">
     <DeprecatedMethod>
       <code><![CDATA[getAppValue]]></code>

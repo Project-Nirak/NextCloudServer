@@ -35,7 +35,6 @@ class ComposerStaticInitFederation
         'OCA\\Federation\\Migration\\Version1010Date20200630191302' => __DIR__ . '/..' . '/../lib/Migration/Version1010Date20200630191302.php',
         'OCA\\Federation\\Settings\\Admin' => __DIR__ . '/..' . '/../lib/Settings/Admin.php',
         'OCA\\Federation\\SyncFederationAddressBooks' => __DIR__ . '/..' . '/../lib/SyncFederationAddressBooks.php',
-        'OCA\\Federation\\SyncFederationCalendars' => __DIR__ . '/..' . '/../lib/SyncFederationCalendars.php',
         'OCA\\Federation\\SyncJob' => __DIR__ . '/..' . '/../lib/SyncJob.php',
         'OCA\\Federation\\TrustedServers' => __DIR__ . '/..' . '/../lib/TrustedServers.php',
     );

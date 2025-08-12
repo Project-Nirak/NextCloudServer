@@ -16,6 +16,9 @@ use OCP\EventDispatcher\IEventListener;
 use OCP\Server;
 use Sabre\DAV\Auth\Plugin;
 
+/**
+ * @template-implements IEventListener<Event|SabrePluginAuthInitEvent>
+ */
 class SabrePluginAuthInitListener implements IEventListener {
 	public function handle(Event $event): void {
 		if (!($event instanceof SabrePluginAuthInitEvent)) {

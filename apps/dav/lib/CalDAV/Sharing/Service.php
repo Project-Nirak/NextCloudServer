@@ -18,7 +18,4 @@ class Service extends SharingService {
 	) {
 		parent::__construct($mapper);
 	}
-
-	public function getShareByCalendarName(string $principal, string $calendarName): array {
-	}
 }

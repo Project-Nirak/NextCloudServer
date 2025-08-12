@@ -102,7 +102,7 @@ class RemoteUserPrincipalBackend implements BackendInterface {
 	}
 
 	/**
-	 * @return array<string, array>
+	 * @return array{'{DAV:}displayname': string, '{http://nextcloud.com/ns}cloud-id': \OCP\Federation\ICloudId, uri: string}
 	 */
 	private function principalUriToPrincipal(string $principalUri): array {
 		[, $name] = \Sabre\Uri\split($principalUri);

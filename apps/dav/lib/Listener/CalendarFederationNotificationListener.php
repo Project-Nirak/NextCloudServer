@@ -21,6 +21,9 @@ use OCP\Federation\ICloudIdManager;
 use OCP\OCM\Exceptions\OCMProviderException;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @template-implements IEventListener<Event|CalendarObjectCreatedEvent|CalendarObjectUpdatedEvent|CalendarObjectDeletedEvent>
+ */
 class CalendarFederationNotificationListener implements IEventListener {
 	public function __construct(
 		private readonly ICloudIdManager $cloudIdManager,

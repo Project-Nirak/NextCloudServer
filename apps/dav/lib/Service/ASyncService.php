@@ -59,7 +59,7 @@ abstract class ASyncService {
 	}
 
 	/**
-	 * @psalm-return array{response: array<string, array>, token: ?string}
+	 * @return array{response: array<string, array<array-key, mixed>>, token: ?string, truncated: bool}
 	 */
 	protected function requestSyncReport(
 		string $absoluteUrl,

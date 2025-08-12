@@ -20,7 +20,6 @@ return array(
     'OCA\\Federation\\Migration\\Version1010Date20200630191302' => $baseDir . '/../lib/Migration/Version1010Date20200630191302.php',
     'OCA\\Federation\\Settings\\Admin' => $baseDir . '/../lib/Settings/Admin.php',
     'OCA\\Federation\\SyncFederationAddressBooks' => $baseDir . '/../lib/SyncFederationAddressBooks.php',
-    'OCA\\Federation\\SyncFederationCalendars' => $baseDir . '/../lib/SyncFederationCalendars.php',
     'OCA\\Federation\\SyncJob' => $baseDir . '/../lib/SyncJob.php',
     'OCA\\Federation\\TrustedServers' => $baseDir . '/../lib/TrustedServers.php',
 );
