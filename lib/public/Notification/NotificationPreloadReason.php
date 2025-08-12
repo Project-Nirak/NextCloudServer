@@ -9,12 +9,13 @@ declare(strict_types=1);
 
 namespace OCP\Notification;
 
+use OCP\AppFramework\Attribute\Consumable;
+
 /**
  * Indicates the reason for preloading notifications to facilitate smarter decisions about what data
  * to preload.
- *
- * @since 32.0.0
  */
+#[Consumable(since: "32.0.0")]
 enum NotificationPreloadReason {
 	/**
 	 * Preparing a single notification for many users.
