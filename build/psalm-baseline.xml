@@ -818,6 +818,11 @@
       <code><![CDATA[null]]></code>
     </NullableReturnStatement>
   </file>
+  <file src="apps/dav/lib/DAV/Sharing/Backend.php">
+    <LessSpecificReturnType>
+      <code><![CDATA[?array]]></code>
+    </LessSpecificReturnType>
+  </file>
   <file src="apps/dav/lib/DAV/Sharing/Plugin.php">
     <DeprecatedMethod>
       <code><![CDATA[getAppValue]]></code>
