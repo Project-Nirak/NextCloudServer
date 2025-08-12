@@ -109,10 +109,7 @@ class Factory implements ICacheFactory {
 	}
 
 	private function getGlobalPrefix(): ?string {
-		if (is_null($this->globalPrefix)) {
-			$this->globalPrefix = ($this->globalPrefixClosure)();
-		}
-		return $this->globalPrefix;
+		return ($this->globalPrefixClosure)();
 	}
 
 	/**

@@ -604,8 +604,13 @@ class Server extends ServerContainer implements IServerContainer {
 
 			if ($config->getValue('installed', false) && !(defined('PHPUNIT_RUN') && PHPUNIT_RUN)) {
 				$logQuery = $config->getValue('log_query');
-				$prefixClosure = function () use ($logQuery, $serverVersion): ?string {
-					if (!$logQuery) {
+				$prefix = null;
+				$bootstrapDone = isset($c[AppConfig::class]);
+				$prefixClosure = function () use ($logQuery, $bootstrapDone, $serverVersion, &$prefix): ?string {
+					if ($prefix !== null) {
+						return $prefix;
+					}
+					if (!$logQuery && $bootstrapDone) {
 						try {
 							$v = \OCP\Server::get(IAppConfig::class)->getAppInstalledVersions(true);
 						} catch (\Doctrine\DBAL\Exception $e) {
@@ -625,7 +630,7 @@ class Server extends ServerContainer implements IServerContainer {
 					$version = implode(',', array_keys($v)) . implode(',', $v);
 					$instanceId = \OC_Util::getInstanceId();
 					$path = \OC::$SERVERROOT;
-					return md5($instanceId . '-' . $version . '-' . $path);
+					return ($prefix = md5($instanceId . '-' . $version . '-' . $path));
 				};
 				return new \OC\Memcache\Factory($prefixClosure,
 					$c->get(LoggerInterface::class),
